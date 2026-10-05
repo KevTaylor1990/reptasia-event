@@ -1,0 +1,51 @@
+body {
+  background-image: linear-gradient(rgba(7, 7, 8, .48), rgba(7, 7, 8, .62)),
+    url('./862dda87-c7b8-43db-bf33-3e3c8d8174cc.png');
+}
+
+.ticket-section {
+  background: transparent;
+}
+
+.single-ticket {
+  grid-template-columns: 1fr auto;
+  cursor: default;
+}
+
+.single-ticket .ticket-radio {
+  display: none;
+}
+
+.single-ticket:hover {
+  border-color: var(--orange);
+}
+
+.hero-description,
+.fact small,
+.attending-note,
+.experience-detail p,
+.ticket-heading > div:first-child p,
+.ticket-countdown,
+.ticket-footnote,
+.site-footer {
+  color: #e2ded3;
+}
+
+.site-footer .wordmark {
+  color: #f7f3e8;
+}
+
+.brand-logo {
+  display: block;
+  width: 170px;
+  height: 57px;
+  object-fit: cover;
+  object-position: center;
+}
+
+@media (max-width: 650px) {
+  .brand-logo {
+    width: 148px;
+    height: 50px;
+  }
+}
