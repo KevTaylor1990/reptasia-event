@@ -93,3 +93,8 @@ body {
     height: 50px;
   }
 }
+
+.date-stamp strong {
+  font-size: 25px;
+  letter-spacing: -.08em;
+}
