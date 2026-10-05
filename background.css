@@ -191,6 +191,14 @@ body {
     height: 50px;
   }
 
+  .menu-toggle {
+    border-color: rgba(255, 255, 255, .72);
+  }
+
+  .menu-toggle span {
+    background: #fff;
+  }
+
   .main-nav {
     color: var(--ink);
   }
