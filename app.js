@@ -61,7 +61,24 @@ modal.addEventListener('click', (event) => {
   if (event.target === modal) closeModal();
 });
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && !modal.hidden) closeModal();
+  if (modal.hidden) return;
+  if (event.key === 'Escape') {
+    closeModal();
+    return;
+  }
+
+  if (event.key === 'Tab') {
+    const focusable = [...modal.querySelectorAll('button:not(:disabled), input:not(:disabled)')];
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
 });
 
 bookingForm.addEventListener('submit', (event) => {

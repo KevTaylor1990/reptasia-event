@@ -92,9 +92,44 @@ body {
     width: 148px;
     height: 50px;
   }
+
+  .main-nav {
+    color: var(--ink);
+  }
+
+  .main-nav .nav-cta {
+    color: #fff;
+  }
+
+  .modal-backdrop {
+    padding: 12px;
+  }
+
+  .checkout-modal {
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 .date-stamp strong {
   font-size: 25px;
   letter-spacing: -.08em;
+}
+
+.multi-ticket .quantity-control {
+  height: 44px;
+}
+
+.multi-ticket .quantity-control button {
+  width: 44px;
+  height: 42px;
+}
+
+@media (max-width: 650px) {
+  .multi-ticket .quantity-control button {
+    width: 44px;
+    height: 42px;
+  }
 }
