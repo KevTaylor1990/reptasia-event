@@ -46,6 +46,16 @@ body {
   white-space: pre-line;
 }
 
+.booking-status:not([hidden]) {
+  margin: 14px 0 0;
+  padding: 11px 12px;
+  border: 1px solid #d69b8a;
+  background: #fff0eb;
+  color: #8a3525;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .checkout-button:disabled {
   cursor: not-allowed;
   opacity: .5;

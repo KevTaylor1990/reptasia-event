@@ -67,7 +67,7 @@
           <aside class="order-card" aria-label="Order summary">
             <div class="order-top"><span class="order-label">YOUR ORDER</span><span class="order-icon" aria-hidden="true">✳</span></div><h3>Reptasia<br>Halloween Night</h3><p class="order-date">Thu & Fri, Oct 29–30 · 6–8 PM · Reptasia Reptiles</p>
             <p class="order-selection" id="orderSelection" aria-live="polite">No tickets selected yet.</p>
-            <div class="order-total"><span>Total <small>ticket prices</small></span><strong id="totalPrice">£0</strong></div><button class="checkout-button" id="checkoutButton" type="button" disabled>Continue to checkout <span aria-hidden="true">→</span></button><p class="secure-note"><span aria-hidden="true">♢</span> Secure checkout · E-tickets delivered by email</p>
+            <div class="order-total"><span>Total <small>ticket prices</small></span><strong id="totalPrice">£0</strong></div><button class="checkout-button" id="checkoutButton" type="button" disabled>Continue to checkout <span aria-hidden="true">→</span></button><p class="secure-note"><span aria-hidden="true">♢</span> Ticket details emailed · no online payment</p>
           </aside>
         </div>
         <p class="ticket-footnote">Costumes are encouraged. Please follow keeper guidance around all animals. <a href="mailto:hello@reptasia.events">Need a hand?</a></p>
@@ -79,7 +79,7 @@
     <section class="checkout-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <button class="modal-close" id="closeModal" type="button" aria-label="Close checkout">×</button>
       <div id="checkoutFormView"><p class="section-kicker">ONE LAST THING</p><h2 id="modalTitle">Your night is<br><em>almost yours.</em></h2><p class="modal-summary" id="modalSummary"></p>
-        <form id="bookingForm"><label for="fullName">Full name</label><input id="fullName" name="fullName" autocomplete="name" placeholder="Your name" required><label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required><button class="checkout-button" type="submit">Place my booking <span aria-hidden="true">→</span></button><p class="demo-note">Demo checkout — no payment will be taken.</p></form>
+        <form id="bookingForm"><label for="fullName">Full name</label><input id="fullName" name="fullName" autocomplete="name" maxlength="100" placeholder="Your name" required><label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="you@example.com" required><p class="booking-status" id="bookingStatus" role="status" aria-live="polite" hidden></p><button class="checkout-button" id="placeBookingButton" type="submit">Email my tickets <span aria-hidden="true">→</span></button><p class="demo-note">We’ll email your ticket confirmation. Payment is arranged separately with the shop.</p></form>
       </div>
       <div class="confirmation-view" id="confirmationView" hidden><span class="confirmation-mark" aria-hidden="true">✓</span><p class="section-kicker">YOU’RE ON THE LIST</p><h2 id="confirmationTitle">See you<br><em>after dark.</em></h2><p id="confirmationMessage"></p><button class="checkout-button" id="doneButton" type="button">Back to the event <span aria-hidden="true">↗</span></button></div>
     </section>
