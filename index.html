@@ -50,13 +50,13 @@
         <div class="section-kicker">02 / Make it yours</div>
         <div class="ticket-heading"><div><h2 id="ticket-title">Choose your<br><em>Halloween tickets.</em></h2><p>Select quantities for each ticket type.</p></div><div class="ticket-countdown"><span class="live-dot"></span> Limited tickets available</div></div>
         <div class="ticket-layout">
-          <div class="ticket-selection">
           <fieldset class="event-day-picker" aria-describedby="capacityMessage">
             <legend>Choose your event day <span>6:00–8:00 PM · 60 spaces per day</span></legend>
             <label class="event-day-option"><input type="radio" name="eventDate" value="2026-10-29" disabled><span><strong>Thursday, 29 October</strong><small><span id="remaining-2026-10-29">Checking availability…</span></small></span></label>
             <label class="event-day-option"><input type="radio" name="eventDate" value="2026-10-30" disabled><span><strong>Friday, 30 October</strong><small><span id="remaining-2026-10-30">Checking availability…</span></small></span></label>
           </fieldset>
           <p class="capacity-message" id="capacityMessage" role="status" aria-live="polite"></p>
+          <div class="ticket-selection">
           <div class="ticket-options" role="group" aria-labelledby="ticket-title">
             <article class="ticket-option multi-ticket" data-ticket-id="under2" data-ticket="Under 2s" data-price="0" data-attendees="1">
               <span class="ticket-info"><strong>Under 2s</strong><small>Free entry for children under 2</small></span><span class="ticket-price"><strong>Free</strong><small>per child</small></span><div class="quantity-control"><button type="button" data-quantity-change="-1" aria-label="Remove one under-2 ticket">−</button><output id="quantity-under2" aria-live="polite">0</output><button type="button" data-quantity-change="1" aria-label="Add one under-2 ticket">+</button></div>

@@ -22,6 +22,7 @@ body {
 .event-day-picker {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-column: 1 / -1;
   gap: 10px;
   min-width: 0;
   margin: 0 0 8px;
@@ -91,6 +92,7 @@ body {
 }
 
 .capacity-message {
+  grid-column: 1 / -1;
   min-height: 17px;
   margin: 0 0 14px;
   color: #e2ded3;
