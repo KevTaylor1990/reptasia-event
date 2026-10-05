@@ -3,6 +3,10 @@ body {
     url('./862dda87-c7b8-43db-bf33-3e3c8d8174cc.png');
 }
 
+.site-header .main-nav a:not(.nav-cta) {
+  color: #ff2d2d;
+}
+
 .ticket-section {
   background: transparent;
 }
