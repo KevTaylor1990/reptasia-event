@@ -48,17 +48,26 @@
     <section class="ticket-section" id="tickets" aria-labelledby="ticket-title">
       <div class="section-wrap ticket-wrap">
         <div class="section-kicker">02 / Make it yours</div>
-        <div class="ticket-heading"><div><h2 id="ticket-title">One ticket.<br><em>All the frights.</em></h2><p>One entrance ticket for Reptasia Halloween Night.</p></div><div class="ticket-countdown"><span class="live-dot"></span> Limited tickets available</div></div>
+        <div class="ticket-heading"><div><h2 id="ticket-title">Choose your<br><em>Halloween tickets.</em></h2><p>Select quantities for each ticket type.</p></div><div class="ticket-countdown"><span class="live-dot"></span> Limited tickets available</div></div>
         <div class="ticket-layout">
           <div class="ticket-options" role="group" aria-labelledby="ticket-title">
-            <article class="ticket-option selected single-ticket" data-ticket="Halloween Entrance Ticket" data-price="25" aria-labelledby="entranceTicketName">
-              <span class="ticket-radio" aria-hidden="true"></span><span class="ticket-info"><strong id="entranceTicketName">Halloween Entrance Ticket</strong><small>Admission to Reptasia’s Halloween event</small><span class="ticket-tag">ONE TICKET TYPE</span></span><span class="ticket-price"><strong>$25</strong><small>+ fees</small></span>
+            <article class="ticket-option multi-ticket" data-ticket-id="under2" data-ticket="Under 2s" data-price="0">
+              <span class="ticket-info"><strong>Under 2s</strong><small>Free entry for children under 2</small></span><span class="ticket-price"><strong>Free</strong><small>per child</small></span><div class="quantity-control"><button type="button" data-quantity-change="-1" aria-label="Remove one under-2 ticket">−</button><output id="quantity-under2" aria-live="polite">0</output><button type="button" data-quantity-change="1" aria-label="Add one under-2 ticket">+</button></div>
+            </article>
+            <article class="ticket-option multi-ticket" data-ticket-id="child" data-ticket="Child (ages 3–16)" data-price="20">
+              <span class="ticket-info"><strong>Child ticket <span class="bundle-note">(ages 3–16)</span></strong><small>Halloween event admission</small></span><span class="ticket-price"><strong>£20</strong><small>per child</small></span><div class="quantity-control"><button type="button" data-quantity-change="-1" aria-label="Remove one child ticket">−</button><output id="quantity-child" aria-live="polite">0</output><button type="button" data-quantity-change="1" aria-label="Add one child ticket">+</button></div>
+            </article>
+            <article class="ticket-option multi-ticket" data-ticket-id="adult" data-ticket="Adult" data-price="15">
+              <span class="ticket-info"><strong>Adult ticket</strong><small>Halloween event admission</small></span><span class="ticket-price"><strong>£15</strong><small>per adult</small></span><div class="quantity-control"><button type="button" data-quantity-change="-1" aria-label="Remove one adult ticket">−</button><output id="quantity-adult" aria-live="polite">0</output><button type="button" data-quantity-change="1" aria-label="Add one adult ticket">+</button></div>
+            </article>
+            <article class="ticket-option multi-ticket" data-ticket-id="family" data-ticket="Family ticket (2 adults + 2 children)" data-price="60">
+              <span class="ticket-info"><strong>Family ticket</strong><small>For 2 adults and 2 children</small></span><span class="ticket-price"><strong>£60</strong><small>per family</small></span><div class="quantity-control"><button type="button" data-quantity-change="-1" aria-label="Remove one family ticket">−</button><output id="quantity-family" aria-live="polite">0</output><button type="button" data-quantity-change="1" aria-label="Add one family ticket">+</button></div>
             </article>
           </div>
           <aside class="order-card" aria-label="Order summary">
             <div class="order-top"><span class="order-label">YOUR ORDER</span><span class="order-icon" aria-hidden="true">✳</span></div><h3>Reptasia<br>Halloween Night</h3><p class="order-date">Sat, Oct 31 · Reptasia Reptile Shop</p>
-            <div class="quantity-row"><div><strong>Tickets</strong><small>Max. 8 per order</small></div><div class="quantity-control"><button type="button" id="decreaseQty" aria-label="Remove one ticket">−</button><output id="quantity" aria-live="polite">2</output><button type="button" id="increaseQty" aria-label="Add one ticket">+</button></div></div>
-            <div class="order-total"><span>Total <small>incl. booking fees</small></span><strong id="totalPrice">$54</strong></div><button class="checkout-button" id="checkoutButton" type="button">Continue to checkout <span aria-hidden="true">→</span></button><p class="secure-note"><span aria-hidden="true">♢</span> Secure checkout · E-tickets delivered by email</p>
+            <p class="order-selection" id="orderSelection" aria-live="polite">No tickets selected yet.</p>
+            <div class="order-total"><span>Total <small>ticket prices</small></span><strong id="totalPrice">£0</strong></div><button class="checkout-button" id="checkoutButton" type="button" disabled>Continue to checkout <span aria-hidden="true">→</span></button><p class="secure-note"><span aria-hidden="true">♢</span> Secure checkout · E-tickets delivered by email</p>
           </aside>
         </div>
         <p class="ticket-footnote">Costumes are encouraged. Please follow keeper guidance around all animals. <a href="mailto:hello@reptasia.events">Need a hand?</a></p>

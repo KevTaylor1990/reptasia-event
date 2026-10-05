@@ -7,17 +7,61 @@ body {
   background: transparent;
 }
 
-.single-ticket {
-  grid-template-columns: 1fr auto;
+.multi-ticket {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  text-align: left;
   cursor: default;
 }
 
-.single-ticket .ticket-radio {
+.multi-ticket .ticket-radio {
   display: none;
 }
 
-.single-ticket:hover {
-  border-color: var(--orange);
+.multi-ticket:hover {
+  transform: none;
+  border-color: var(--line);
+  box-shadow: none;
+}
+
+.multi-ticket .ticket-price {
+  min-width: 58px;
+}
+
+.multi-ticket .quantity-control {
+  flex-shrink: 0;
+}
+
+.order-selection {
+  min-height: 40px;
+  margin: 0;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.modal-summary {
+  white-space: pre-line;
+}
+
+.checkout-button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+  transform: none;
+}
+
+@media (max-width: 420px) {
+  .multi-ticket {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 12px;
+  }
+
+  .multi-ticket .quantity-control {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
 }
 
 .hero-description,

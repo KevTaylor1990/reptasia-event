@@ -1,36 +1,49 @@
-const selectedTicket = document.querySelector('.single-ticket');
-const quantityOutput = document.querySelector('#quantity');
 const totalPrice = document.querySelector('#totalPrice');
 const modal = document.querySelector('#checkoutModal');
 const bookingForm = document.querySelector('#bookingForm');
 const menuToggle = document.querySelector('#menuToggle');
 const mainNav = document.querySelector('.main-nav');
+const ticketCards = [...document.querySelectorAll('.multi-ticket')];
+const quantities = Object.fromEntries(ticketCards.map((card) => [card.dataset.ticketId, 0]));
+const currency = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 });
 
-let quantity = 2;
 let lastFocusedElement = null;
 
 function updateOrder() {
-  quantityOutput.textContent = quantity;
-  const subtotal = Number(selectedTicket.dataset.price) * quantity;
-  const fees = Math.ceil(subtotal * 0.08);
-  totalPrice.textContent = `$${subtotal + fees}`;
+  let total = 0;
+  const lines = [];
+
+  ticketCards.forEach((card) => {
+    const id = card.dataset.ticketId;
+    const quantity = quantities[id];
+    const lineTotal = quantity * Number(card.dataset.price);
+    total += lineTotal;
+    document.querySelector(`#quantity-${id}`).textContent = quantity;
+    if (quantity > 0) {
+      lines.push(`${quantity} × ${card.dataset.ticket} — ${currency.format(lineTotal)}`);
+    }
+  });
+
+  totalPrice.textContent = currency.format(total);
+  document.querySelector('#orderSelection').textContent = lines.length ? lines.join(' · ') : 'No tickets selected yet.';
+  document.querySelector('#checkoutButton').disabled = !Object.values(quantities).some((quantity) => quantity > 0);
+  return { lines, total };
 }
 
-document.querySelector('#decreaseQty').addEventListener('click', () => {
-  if (quantity > 1) quantity -= 1;
-  updateOrder();
-});
-
-document.querySelector('#increaseQty').addEventListener('click', () => {
-  if (quantity < 8) quantity += 1;
-  updateOrder();
+document.querySelectorAll('[data-quantity-change]').forEach((button) => {
+  button.addEventListener('click', () => {
+    const card = button.closest('.multi-ticket');
+    const id = card.dataset.ticketId;
+    const change = Number(button.dataset.quantityChange);
+    quantities[id] = Math.max(0, Math.min(8, quantities[id] + change));
+    updateOrder();
+  });
 });
 
 document.querySelector('#checkoutButton').addEventListener('click', () => {
   lastFocusedElement = document.activeElement;
-  const subtotal = Number(selectedTicket.dataset.price) * quantity;
-  const total = totalPrice.textContent;
-  document.querySelector('#modalSummary').innerHTML = `<strong>${quantity} × ${selectedTicket.dataset.ticket}</strong><br>Reptasia Halloween Night · Saturday, October 31 · Total ${total} (includes $${Number(total.slice(1)) - subtotal} booking fees)`;
+  const order = updateOrder();
+  document.querySelector('#modalSummary').textContent = `${order.lines.join('\n')}\nReptasia Halloween Night · Saturday, October 31\nTotal: ${currency.format(order.total)}`;
   document.querySelector('#checkoutFormView').hidden = false;
   document.querySelector('#confirmationView').hidden = true;
   modal.hidden = false;
@@ -55,7 +68,8 @@ bookingForm.addEventListener('submit', (event) => {
   event.preventDefault();
   if (!bookingForm.reportValidity()) return;
   const name = document.querySelector('#fullName').value.trim().split(/\s+/)[0];
-  document.querySelector('#confirmationMessage').textContent = `Thanks, ${name}! Your order for ${quantity} entrance ticket${quantity === 1 ? '' : 's'} is reserved for Reptasia Halloween Night. Your e-ticket${quantity === 1 ? ' is' : 's are'} on the way.`;
+  const order = updateOrder();
+  document.querySelector('#confirmationMessage').textContent = `Thanks, ${name}! Your Reptasia Halloween Night tickets are reserved. ${order.lines.join('. ')}. Total: ${currency.format(order.total)}. Your e-ticket details are on the way.`;
   document.querySelector('#checkoutFormView').hidden = true;
   document.querySelector('#confirmationView').hidden = false;
   document.querySelector('#doneButton').focus();
