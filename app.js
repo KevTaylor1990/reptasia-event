@@ -4,13 +4,40 @@ const bookingForm = document.querySelector('#bookingForm');
 const menuToggle = document.querySelector('#menuToggle');
 const mainNav = document.querySelector('.main-nav');
 const ticketCards = [...document.querySelectorAll('.multi-ticket')];
+const eventDayInputs = [...document.querySelectorAll('input[name="eventDate"]')];
 const quantities = Object.fromEntries(ticketCards.map((card) => [card.dataset.ticketId, 0]));
 const currency = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 });
 
 let lastFocusedElement = null;
+let selectedEventDate = '';
+let availability = {};
+let availabilityLoaded = false;
+
+const eventDates = {
+  '2026-10-29': 'Thursday, 29 October 2026',
+  '2026-10-30': 'Friday, 30 October 2026'
+};
+
+function renderAvailability() {
+  eventDayInputs.forEach((input) => {
+    const day = availability[input.value];
+    const isFull = !day || day.spacesRemaining === 0;
+    input.disabled = isFull;
+    input.closest('.event-day-option').classList.toggle('selected', input.checked);
+    input.closest('.event-day-option').classList.toggle('unavailable', isFull);
+    document.querySelector(`#remaining-${input.value}`).textContent = !day
+      ? 'Availability unavailable'
+      : isFull
+        ? 'Fully booked'
+        : `${day.spacesRemaining} of 60 spaces left`;
+  });
+}
 
 function updateOrder() {
   let total = 0;
+  const attendees = ticketCards.reduce((count, card) => (
+    count + quantities[card.dataset.ticketId] * Number(card.dataset.attendees)
+  ), 0);
   const lines = [];
 
   ticketCards.forEach((card) => {
@@ -19,6 +46,11 @@ function updateOrder() {
     const lineTotal = quantity * Number(card.dataset.price);
     total += lineTotal;
     document.querySelector(`#quantity-${id}`).textContent = quantity;
+    card.querySelector('[data-quantity-change="-1"]').disabled = quantity === 0;
+    card.querySelector('[data-quantity-change="1"]').disabled = quantity >= 60
+      || !selectedEventDate
+      || !availability[selectedEventDate]
+      || attendees + Number(card.dataset.attendees) > availability[selectedEventDate].spacesRemaining;
     if (quantity > 0) {
       lines.push(`${quantity} × ${card.dataset.ticket} — ${currency.format(lineTotal)}`);
     }
@@ -26,8 +58,51 @@ function updateOrder() {
 
   totalPrice.textContent = currency.format(total);
   document.querySelector('#orderSelection').textContent = lines.length ? lines.join(' · ') : 'No tickets selected yet.';
-  document.querySelector('#checkoutButton').disabled = !Object.values(quantities).some((quantity) => quantity > 0);
-  return { lines, total };
+  const remaining = availability[selectedEventDate]?.spacesRemaining;
+  const capacityMessage = document.querySelector('#capacityMessage');
+  if (!availabilityLoaded) {
+    capacityMessage.textContent = 'Checking remaining spaces…';
+  } else if (selectedEventDate && remaining === 0) {
+    capacityMessage.textContent = 'This night is fully booked. Please choose the other event night.';
+  } else if (selectedEventDate && remaining !== undefined) {
+    capacityMessage.textContent = `${remaining} ${remaining === 1 ? 'space' : 'spaces'} remaining for this night. Each person, including children under 2, uses one space; a family ticket uses four.`;
+  } else if (availabilityLoaded) {
+    capacityMessage.textContent = 'Select an event day to check availability and choose tickets.';
+  }
+
+  document.querySelector('#checkoutButton').disabled = !availabilityLoaded
+    || !selectedEventDate
+    || attendees === 0
+    || remaining === undefined
+    || attendees > remaining;
+  return { lines, total, attendees, remaining };
+}
+
+eventDayInputs.forEach((input) => {
+  input.addEventListener('change', () => {
+    selectedEventDate = input.value;
+    eventDayInputs.forEach((dayInput) => dayInput.closest('.event-day-option').classList.toggle('selected', dayInput.checked));
+    document.querySelector('#orderDate').textContent = `${eventDates[selectedEventDate]} · 6–8 PM · Reptasia Reptiles`;
+    document.querySelector('#bookingStatus').hidden = true;
+    updateOrder();
+  });
+});
+
+async function loadAvailability() {
+  const capacityMessage = document.querySelector('#capacityMessage');
+  try {
+    const response = await fetch('/api/availability', { cache: 'no-store' });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Availability could not be loaded.');
+    availability = result.days;
+    availabilityLoaded = true;
+    renderAvailability();
+    updateOrder();
+  } catch {
+    availabilityLoaded = false;
+    capacityMessage.textContent = 'Live availability is unavailable. Please refresh or contact Reptasia Reptiles.';
+    document.querySelector('#checkoutButton').disabled = true;
+  }
 }
 
 document.querySelectorAll('[data-quantity-change]').forEach((button) => {
@@ -35,7 +110,7 @@ document.querySelectorAll('[data-quantity-change]').forEach((button) => {
     const card = button.closest('.multi-ticket');
     const id = card.dataset.ticketId;
     const change = Number(button.dataset.quantityChange);
-    quantities[id] = Math.max(0, Math.min(8, quantities[id] + change));
+    quantities[id] = Math.max(0, Math.min(60, quantities[id] + change));
     updateOrder();
   });
 });
@@ -43,7 +118,7 @@ document.querySelectorAll('[data-quantity-change]').forEach((button) => {
 document.querySelector('#checkoutButton').addEventListener('click', () => {
   lastFocusedElement = document.activeElement;
   const order = updateOrder();
-  document.querySelector('#modalSummary').textContent = `${order.lines.join('\n')}\nReptasia Halloween Night · Thursday & Friday, October 29–30 · 6:00–8:00 PM\nTotal: ${currency.format(order.total)}`;
+  document.querySelector('#modalSummary').textContent = `${eventDates[selectedEventDate]} · 6:00–8:00 PM\n${order.lines.join('\n')}\n${order.attendees} of 60 spaces · Total: ${currency.format(order.total)}`;
   document.querySelector('#checkoutFormView').hidden = false;
   document.querySelector('#confirmationView').hidden = true;
   document.querySelector('#bookingStatus').hidden = true;
@@ -101,6 +176,7 @@ bookingForm.addEventListener('submit', (event) => {
     body: JSON.stringify({
       name: document.querySelector('#fullName').value.trim(),
       email: document.querySelector('#email').value.trim(),
+      eventDate: selectedEventDate,
       tickets: order
     })
   })
@@ -108,11 +184,26 @@ bookingForm.addEventListener('submit', (event) => {
       const result = await response.json().catch(() => {
         throw new Error('Ticket email service could not be reached. Please open the hosted booking page or contact Reptasia Reptiles.');
       });
-      if (!response.ok) throw new Error(result.error || 'We could not send your tickets. Please try again.');
+      if (!response.ok) {
+        if (response.status === 409 && Number.isInteger(result.spacesRemaining)) {
+          availability[selectedEventDate].spacesRemaining = result.spacesRemaining;
+          renderAvailability();
+          updateOrder();
+        }
+        throw new Error(result.error || 'We could not send your tickets. Please try again.');
+      }
       return result;
     })
     .then((result) => {
-      document.querySelector('#confirmationMessage').textContent = `Your Reptasia Halloween Night booking ${result.bookingReference} is confirmed. ${result.message}`;
+      const bookedEventDate = selectedEventDate;
+      availability[bookedEventDate].spacesRemaining = result.spacesRemaining;
+      Object.keys(quantities).forEach((id) => { quantities[id] = 0; });
+      selectedEventDate = '';
+      eventDayInputs.forEach((input) => { input.checked = false; });
+      document.querySelector('#orderDate').textContent = 'Choose a day · 6–8 PM · Reptasia Reptiles';
+      renderAvailability();
+      updateOrder();
+      document.querySelector('#confirmationMessage').textContent = `Your Reptasia Halloween Night booking ${result.bookingReference} for ${eventDates[bookedEventDate]} is confirmed. ${result.message}`;
       document.querySelector('#checkoutFormView').hidden = true;
       document.querySelector('#confirmationView').hidden = false;
       document.querySelector('#doneButton').focus();
@@ -144,3 +235,4 @@ mainNav.querySelectorAll('a').forEach((link) => {
 });
 
 updateOrder();
+loadAvailability();

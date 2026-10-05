@@ -8,13 +8,18 @@ const nodemailer = require('nodemailer');
 
 const ROOT = __dirname;
 const PORT = Number(process.env.PORT) || 3000;
+const DAILY_CAPACITY = 60;
+const BOOKINGS_FILE = path.resolve(ROOT, process.env.BOOKINGS_FILE || 'data/bookings.json');
 const EVENT_ADDRESS = 'Reptasia Reptiles, 34-36 Peabody Rd, North Camp, Farnborough, GU14 6EY';
-const EVENT_SCHEDULE = 'Thursday 29 October or Friday 30 October 2026, 6:00–8:00 PM';
+const EVENT_DAYS = {
+  '2026-10-29': { name: 'Thursday, 29 October 2026', schedule: 'Thursday 29 October 2026, 6:00–8:00 PM' },
+  '2026-10-30': { name: 'Friday, 30 October 2026', schedule: 'Friday 30 October 2026, 6:00–8:00 PM' }
+};
 const TICKETS = {
-  under2: { name: 'Under 2s', detail: 'Free entry for children under 2', price: 0 },
-  child: { name: 'Child (ages 3–16)', detail: 'Halloween event admission', price: 20 },
-  adult: { name: 'Adult', detail: 'Halloween event admission', price: 15 },
-  family: { name: 'Family ticket (2 adults + 2 children)', detail: 'Admits 2 adults and 2 children', price: 60 }
+  under2: { name: 'Under 2s', detail: 'Free entry for children under 2', price: 0, attendees: 1 },
+  child: { name: 'Child (ages 3–16)', detail: 'Halloween event admission', price: 20, attendees: 1 },
+  adult: { name: 'Adult', detail: 'Halloween event admission', price: 15, attendees: 1 },
+  family: { name: 'Family ticket (2 adults + 2 children)', detail: 'Admits 2 adults and 2 children', price: 60, attendees: 4 }
 };
 const PUBLIC_FILES = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
@@ -26,6 +31,7 @@ const PUBLIC_FILES = new Map([
   ['/IMG-20261004-WA0000.jpg', ['IMG-20261004-WA0000.jpg', 'image/jpeg']]
 ]);
 const rateLimits = new Map();
+let bookingQueue = Promise.resolve();
 
 function json(response, status, body) {
   response.writeHead(status, {
@@ -34,6 +40,46 @@ function json(response, status, body) {
     'X-Content-Type-Options': 'nosniff'
   });
   response.end(JSON.stringify(body));
+}
+
+function withBookingLock(operation) {
+  const result = bookingQueue.then(operation, operation);
+  bookingQueue = result.catch(() => {});
+  return result;
+}
+
+async function loadReservations() {
+  try {
+    const data = JSON.parse(await fs.readFile(BOOKINGS_FILE, 'utf8'));
+    if (!Array.isArray(data) || data.some((reservation) => !EVENT_DAYS[reservation.eventDate]
+      || !Number.isInteger(reservation.spaces) || reservation.spaces < 1)) {
+      throw new Error('Booking inventory data has an invalid format.');
+    }
+    return data;
+  } catch (error) {
+    if (error.code === 'ENOENT') return [];
+    throw error;
+  }
+}
+
+async function saveReservations(reservations) {
+  await fs.mkdir(path.dirname(BOOKINGS_FILE), { recursive: true });
+  const temporaryFile = `${BOOKINGS_FILE}.${process.pid}.${crypto.randomBytes(4).toString('hex')}.tmp`;
+  await fs.writeFile(temporaryFile, `${JSON.stringify(reservations, null, 2)}\n`, { flag: 'wx' });
+  await fs.rename(temporaryFile, BOOKINGS_FILE);
+}
+
+function getDayAvailability(reservations) {
+  return Object.fromEntries(Object.entries(EVENT_DAYS).map(([eventDate, day]) => {
+    const booked = reservations
+      .filter((reservation) => reservation.eventDate === eventDate)
+      .reduce((total, reservation) => total + reservation.spaces, 0);
+    return [eventDate, {
+      name: day.name,
+      capacity: DAILY_CAPACITY,
+      spacesRemaining: Math.max(0, DAILY_CAPACITY - booked)
+    }];
+  }));
 }
 
 function escapeHtml(value) {
@@ -78,7 +124,7 @@ function createOrder(tickets) {
 
   const seen = new Set();
   const lines = tickets.map((item) => {
-    if (!item || !Object.hasOwn(TICKETS, item.id) || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 8 || seen.has(item.id)) {
+    if (!item || !Object.hasOwn(TICKETS, item.id) || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > DAILY_CAPACITY || seen.has(item.id)) {
       throw Object.assign(new Error('One or more ticket quantities are invalid. Please review your order.'), { status: 400 });
     }
     seen.add(item.id);
@@ -86,14 +132,18 @@ function createOrder(tickets) {
     return { ...ticket, quantity: item.quantity, lineTotal: ticket.price * item.quantity };
   });
 
-  return { lines, total: lines.reduce((sum, line) => sum + line.lineTotal, 0) };
+  return {
+    lines,
+    total: lines.reduce((sum, line) => sum + line.lineTotal, 0),
+    attendees: lines.reduce((sum, line) => sum + line.quantity * line.attendees, 0)
+  };
 }
 
 function formatGBP(amount) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(amount);
 }
 
-function makeEmail(name, reference, order) {
+function makeEmail(name, reference, order, eventDay) {
   const rowsText = order.lines.map((line) => `• ${line.quantity} × ${line.name} — ${formatGBP(line.lineTotal)}`).join('\n');
   const rowsHtml = order.lines.map((line) => `<tr><td style="padding:10px 8px;border-bottom:1px solid #e6e4dc">${line.quantity} × ${escapeHtml(line.name)}<br><small>${escapeHtml(line.detail)}</small></td><td style="padding:10px 8px;border-bottom:1px solid #e6e4dc;text-align:right;white-space:nowrap">${formatGBP(line.lineTotal)}</td></tr>`).join('');
   const safeName = escapeHtml(name);
@@ -101,8 +151,8 @@ function makeEmail(name, reference, order) {
 
   return {
     subject: `Your Reptasia Halloween tickets · ${reference}`,
-    text: `Hi ${name},\n\nYour tickets for Reptasia Halloween Night are confirmed. Keep this email as your booking confirmation.\n\nBooking reference: ${reference}\n\n${rowsText}\n\nTotal: ${formatGBP(order.total)}\n\nEvent: ${EVENT_SCHEDULE}\nVenue: ${EVENT_ADDRESS}\n\nPlease show this email to the Reptasia team when you arrive. If you have any questions, reply to this email.\n\nSee you there,\nReptasia Reptiles`,
-    html: `<!doctype html><html lang="en"><body style="margin:0;background:#f8f7f3;color:#20221d;font-family:Arial,sans-serif"><main style="max-width:600px;margin:24px auto;padding:30px;background:#fffefa;border:1px solid #e6e4dc"><p style="color:#d84d30;font-size:12px;font-weight:bold;letter-spacing:2px">REPTASIA REPTILES</p><h1 style="font-size:28px">Your Halloween tickets are confirmed</h1><p>Hi ${safeName}, keep this email as your booking confirmation and show it to the Reptasia team when you arrive.</p><p style="padding:12px;background:#f1efe9"><strong>Booking reference:</strong> ${safeReference}</p><table style="width:100%;border-collapse:collapse"><tbody>${rowsHtml}</tbody><tfoot><tr><td style="padding:14px 8px"><strong>Total</strong></td><td style="padding:14px 8px;text-align:right"><strong>${formatGBP(order.total)}</strong></td></tr></tfoot></table><h2 style="font-size:18px;margin-top:26px">Event details</h2><p><strong>${EVENT_SCHEDULE}</strong><br>${EVENT_ADDRESS}</p><p style="color:#74766d;font-size:13px">If you have any questions, reply to this email. We look forward to seeing you!</p><p style="margin-top:26px">— Reptasia Reptiles</p></main></body></html>`
+    text: `Hi ${name},\n\nYour tickets for Reptasia Halloween Night are confirmed. Keep this email as your booking confirmation.\n\nBooking reference: ${reference}\n\n${rowsText}\n\nTotal: ${formatGBP(order.total)}\nPeople in booking: ${order.attendees}\n\nEvent: ${eventDay.schedule}\nVenue: ${EVENT_ADDRESS}\n\nPlease show this email to the Reptasia team when you arrive. If you have any questions, reply to this email.\n\nSee you there,\nReptasia Reptiles`,
+    html: `<!doctype html><html lang="en"><body style="margin:0;background:#f8f7f3;color:#20221d;font-family:Arial,sans-serif"><main style="max-width:600px;margin:24px auto;padding:30px;background:#fffefa;border:1px solid #e6e4dc"><p style="color:#d84d30;font-size:12px;font-weight:bold;letter-spacing:2px">REPTASIA REPTILES</p><h1 style="font-size:28px">Your Halloween tickets are confirmed</h1><p>Hi ${safeName}, keep this email as your booking confirmation and show it to the Reptasia team when you arrive.</p><p style="padding:12px;background:#f1efe9"><strong>Booking reference:</strong> ${safeReference}</p><table style="width:100%;border-collapse:collapse"><tbody>${rowsHtml}</tbody><tfoot><tr><td style="padding:14px 8px"><strong>Total</strong></td><td style="padding:14px 8px;text-align:right"><strong>${formatGBP(order.total)}</strong></td></tr></tfoot></table><p><strong>People in booking:</strong> ${order.attendees}</p><h2 style="font-size:18px;margin-top:26px">Event details</h2><p><strong>${escapeHtml(eventDay.schedule)}</strong><br>${EVENT_ADDRESS}</p><p style="color:#74766d;font-size:13px">If you have any questions, reply to this email. We look forward to seeing you!</p><p style="margin-top:26px">— Reptasia Reptiles</p></main></body></html>`
   };
 }
 
@@ -122,6 +172,16 @@ function buildTransport() {
 
 const server = http.createServer(async (request, response) => {
   const requestUrl = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
+  if (requestUrl.pathname === '/api/availability' && request.method === 'GET') {
+    try {
+      const days = await withBookingLock(async () => getDayAvailability(await loadReservations()));
+      return json(response, 200, { days });
+    } catch (error) {
+      console.error('Could not load ticket availability:', error.message);
+      return json(response, 503, { error: 'Live ticket availability is temporarily unavailable.' });
+    }
+  }
+
   if (requestUrl.pathname === '/api/bookings' && request.method === 'POST') {
     if (!checkRateLimit(request)) return json(response, 429, { error: 'Too many booking attempts. Please wait a little and try again.' });
     if (!request.headers['content-type']?.toLowerCase().includes('application/json')) {
@@ -134,29 +194,65 @@ const server = http.createServer(async (request, response) => {
       const email = typeof body.email === 'string' ? body.email.trim() : '';
       if (name.length < 2 || name.length > 100) throw Object.assign(new Error('Enter your full name (up to 100 characters).'), { status: 400 });
       if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw Object.assign(new Error('Enter a valid email address for ticket delivery.'), { status: 400 });
+      const eventDay = EVENT_DAYS[body.eventDate];
+      if (!eventDay) throw Object.assign(new Error('Choose Thursday 29 October or Friday 30 October.'), { status: 400 });
       const order = createOrder(body.tickets);
+      if (order.attendees > DAILY_CAPACITY) throw Object.assign(new Error(`A booking cannot use more than ${DAILY_CAPACITY} spaces.`), { status: 400 });
       const transporter = buildTransport();
       if (!transporter) return json(response, 503, { error: 'Ticket email is not configured yet. Please contact Reptasia Reptiles to complete your booking.' });
 
-      const bookingReference = `RPT-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
-      const emailContent = makeEmail(name, bookingReference, order);
-      await transporter.sendMail({
-        from: process.env.EMAIL_FROM,
-        to: email,
-        replyTo: process.env.REPLY_TO || process.env.EMAIL_FROM,
-        subject: emailContent.subject,
-        text: emailContent.text,
-        html: emailContent.html
+      const booking = await withBookingLock(async () => {
+        const reservations = await loadReservations();
+        const dayAvailability = getDayAvailability(reservations)[body.eventDate];
+        if (order.attendees > dayAvailability.spacesRemaining) {
+          throw Object.assign(new Error(`Only ${dayAvailability.spacesRemaining} spaces remain for ${eventDay.name}. Please reduce your order or choose the other night.`), {
+            status: 409,
+            spacesRemaining: dayAvailability.spacesRemaining
+          });
+        }
+
+        const bookingReference = `RPT-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+        const reservation = {
+          bookingReference,
+          eventDate: body.eventDate,
+          spaces: order.attendees,
+          createdAt: new Date().toISOString()
+        };
+        reservations.push(reservation);
+        await saveReservations(reservations);
+
+        try {
+          const emailContent = makeEmail(name, bookingReference, order, eventDay);
+          await transporter.sendMail({
+            from: process.env.EMAIL_FROM,
+            to: email,
+            replyTo: process.env.REPLY_TO || process.env.EMAIL_FROM,
+            subject: emailContent.subject,
+            text: emailContent.text,
+            html: emailContent.html
+          });
+        } catch (error) {
+          try {
+            await saveReservations(reservations.filter((entry) => entry.bookingReference !== bookingReference));
+          } catch (rollbackError) {
+            console.error('Could not release spaces after email failure:', rollbackError.message);
+          }
+          throw error;
+        }
+
+        const spacesRemaining = getDayAvailability(reservations)[body.eventDate].spacesRemaining;
+        return { bookingReference, spacesRemaining };
       });
 
       return json(response, 201, {
-        bookingReference,
-        message: `Your ticket confirmation has been emailed to ${email}.`
+        ...booking,
+        message: `Your ticket confirmation has been emailed to ${email}. ${booking.spacesRemaining} spaces remain for this night.`
       });
     } catch (error) {
       console.error('Booking email failed:', error.message);
       return json(response, error.status || 502, {
-        error: error.status ? error.message : 'We could not send your tickets right now. Please try again shortly.'
+        error: error.status ? error.message : 'We could not reserve spaces or send your tickets right now. Please try again shortly.',
+        ...(error.spacesRemaining === undefined ? {} : { spacesRemaining: error.spacesRemaining })
       });
     }
   }

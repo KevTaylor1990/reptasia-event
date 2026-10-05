@@ -50,22 +50,30 @@
         <div class="section-kicker">02 / Make it yours</div>
         <div class="ticket-heading"><div><h2 id="ticket-title">Choose your<br><em>Halloween tickets.</em></h2><p>Select quantities for each ticket type.</p></div><div class="ticket-countdown"><span class="live-dot"></span> Limited tickets available</div></div>
         <div class="ticket-layout">
+          <div class="ticket-selection">
+          <fieldset class="event-day-picker" aria-describedby="capacityMessage">
+            <legend>Choose your event day <span>6:00–8:00 PM · 60 spaces per day</span></legend>
+            <label class="event-day-option"><input type="radio" name="eventDate" value="2026-10-29" disabled><span><strong>Thursday, 29 October</strong><small><span id="remaining-2026-10-29">Checking availability…</span></small></span></label>
+            <label class="event-day-option"><input type="radio" name="eventDate" value="2026-10-30" disabled><span><strong>Friday, 30 October</strong><small><span id="remaining-2026-10-30">Checking availability…</span></small></span></label>
+          </fieldset>
+          <p class="capacity-message" id="capacityMessage" role="status" aria-live="polite"></p>
           <div class="ticket-options" role="group" aria-labelledby="ticket-title">
-            <article class="ticket-option multi-ticket" data-ticket-id="under2" data-ticket="Under 2s" data-price="0">
+            <article class="ticket-option multi-ticket" data-ticket-id="under2" data-ticket="Under 2s" data-price="0" data-attendees="1">
               <span class="ticket-info"><strong>Under 2s</strong><small>Free entry for children under 2</small></span><span class="ticket-price"><strong>Free</strong><small>per child</small></span><div class="quantity-control"><button type="button" data-quantity-change="-1" aria-label="Remove one under-2 ticket">−</button><output id="quantity-under2" aria-live="polite">0</output><button type="button" data-quantity-change="1" aria-label="Add one under-2 ticket">+</button></div>
             </article>
-            <article class="ticket-option multi-ticket" data-ticket-id="child" data-ticket="Child (ages 3–16)" data-price="20">
+            <article class="ticket-option multi-ticket" data-ticket-id="child" data-ticket="Child (ages 3–16)" data-price="20" data-attendees="1">
               <span class="ticket-info"><strong>Child ticket <span class="bundle-note">(ages 3–16)</span></strong><small>Halloween event admission</small></span><span class="ticket-price"><strong>£20</strong><small>per child</small></span><div class="quantity-control"><button type="button" data-quantity-change="-1" aria-label="Remove one child ticket">−</button><output id="quantity-child" aria-live="polite">0</output><button type="button" data-quantity-change="1" aria-label="Add one child ticket">+</button></div>
             </article>
-            <article class="ticket-option multi-ticket" data-ticket-id="adult" data-ticket="Adult" data-price="15">
+            <article class="ticket-option multi-ticket" data-ticket-id="adult" data-ticket="Adult" data-price="15" data-attendees="1">
               <span class="ticket-info"><strong>Adult ticket</strong><small>Halloween event admission</small></span><span class="ticket-price"><strong>£15</strong><small>per adult</small></span><div class="quantity-control"><button type="button" data-quantity-change="-1" aria-label="Remove one adult ticket">−</button><output id="quantity-adult" aria-live="polite">0</output><button type="button" data-quantity-change="1" aria-label="Add one adult ticket">+</button></div>
             </article>
-            <article class="ticket-option multi-ticket" data-ticket-id="family" data-ticket="Family ticket (2 adults + 2 children)" data-price="60">
+            <article class="ticket-option multi-ticket" data-ticket-id="family" data-ticket="Family ticket (2 adults + 2 children)" data-price="60" data-attendees="4">
               <span class="ticket-info"><strong>Family ticket</strong><small>For 2 adults and 2 children</small></span><span class="ticket-price"><strong>£60</strong><small>per family</small></span><div class="quantity-control"><button type="button" data-quantity-change="-1" aria-label="Remove one family ticket">−</button><output id="quantity-family" aria-live="polite">0</output><button type="button" data-quantity-change="1" aria-label="Add one family ticket">+</button></div>
             </article>
           </div>
+          </div>
           <aside class="order-card" aria-label="Order summary">
-            <div class="order-top"><span class="order-label">YOUR ORDER</span><span class="order-icon" aria-hidden="true">✳</span></div><h3>Reptasia<br>Halloween Night</h3><p class="order-date">Thu & Fri, Oct 29–30 · 6–8 PM · Reptasia Reptiles</p>
+            <div class="order-top"><span class="order-label">YOUR ORDER</span><span class="order-icon" aria-hidden="true">✳</span></div><h3>Reptasia<br>Halloween Night</h3><p class="order-date" id="orderDate">Choose a day · 6–8 PM · Reptasia Reptiles</p>
             <p class="order-selection" id="orderSelection" aria-live="polite">No tickets selected yet.</p>
             <div class="order-total"><span>Total <small>ticket prices</small></span><strong id="totalPrice">£0</strong></div><button class="checkout-button" id="checkoutButton" type="button" disabled>Continue to checkout <span aria-hidden="true">→</span></button><p class="secure-note"><span aria-hidden="true">♢</span> Ticket details emailed · no online payment</p>
           </aside>

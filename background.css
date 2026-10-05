@@ -7,6 +7,94 @@ body {
   background: transparent;
 }
 
+.ticket-selection {
+  min-width: 0;
+}
+
+.event-day-picker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+  margin: 0 0 8px;
+  padding: 0;
+  border: 0;
+}
+
+.event-day-picker legend {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: #f7f3e8;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.event-day-picker legend span {
+  color: #e2ded3;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.event-day-option {
+  display: flex;
+  min-height: 68px;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 1px solid rgba(255, 255, 255, .28);
+  background: rgba(15, 15, 15, .76);
+  cursor: pointer;
+}
+
+.event-day-option.selected {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 1px var(--orange);
+}
+
+.event-day-option.unavailable {
+  cursor: not-allowed;
+  opacity: .58;
+}
+
+.event-day-option input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  accent-color: var(--orange);
+}
+
+.event-day-option > span {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.event-day-option strong {
+  color: #f7f3e8;
+  font-size: 11px;
+}
+
+.event-day-option small {
+  color: #e2ded3;
+  font-size: 10px;
+}
+
+.capacity-message {
+  min-height: 17px;
+  margin: 0 0 14px;
+  color: #e2ded3;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.event-day-option:focus-within {
+  outline: 3px solid #f7f3e8;
+  outline-offset: 2px;
+}
+
 .multi-ticket {
   grid-template-columns: minmax(0, 1fr) auto auto;
   text-align: left;
